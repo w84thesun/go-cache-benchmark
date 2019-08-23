@@ -13,6 +13,4 @@ Results are:
 | | | | | |
 | BenchmarkFreeCacheSet-12 |          200000 |              6895 ns/op |            2628 B/op |         51 allocs/op |
 | BenchmarkHashicorpSet-12 |         1000000 |              1662 ns/op |             459 B/op |          6 allocs/op |
-
-
  

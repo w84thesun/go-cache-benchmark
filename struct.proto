@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package benchCaches;
+
+
+message SomeProtoStruct {
+    int64 ID = 1;
+    int64 I = 2;
+    int64 D = 3;
+    int64 B = 4;
+    int64 T1 = 5;
+    int64 T2 = 6;
+    int64 Time = 7;
+    string StringID = 8;
+    string Name1 = 9;
+    string Name2 = 10;
+    string StringTime = 11;
+    string Type = 12;
+    string Status = 13;
+    string S = 14;
+}

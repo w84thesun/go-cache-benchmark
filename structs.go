@@ -1,4 +1,4 @@
-package benchCaches
+package cachebench
 
 import (
 	"bytes"
