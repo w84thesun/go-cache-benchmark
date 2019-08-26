@@ -32,6 +32,7 @@ import (
 	"github.com/cespare/xxhash"
 	"github.com/coocood/freecache"
 	"github.com/golang/groupcache/lru"
+	hashicorp "github.com/hashicorp/golang-lru"
 	"github.com/pingcap/go-ycsb/pkg/generator"
 )
 
@@ -323,6 +324,40 @@ func newSyncMap() *SyncMap {
 }
 
 //========================================================================
+//                          icache
+//========================================================================
+type Hashicorp struct {
+	cache *hashicorp.Cache
+}
+
+func (i *Hashicorp) Get(key []byte) ([]byte, error) {
+	res, found := i.cache.Get(string(key))
+	if !found {
+		return nil, errKeyNotFound
+	}
+
+	r, ok := res.([]byte)
+	if !ok {
+		return nil, errInvalidValue
+	}
+
+	return r, nil
+}
+
+func (i *Hashicorp) Set(key []byte, value []byte) error {
+	i.cache.Add(string(key), value)
+	return nil
+}
+
+func newHashicorpLRU(keysInWindow int) *Hashicorp {
+	c, _ := hashicorp.New(keysInWindow)
+
+	return &Hashicorp{
+		cache: c,
+	}
+}
+
+//========================================================================
 //                         Benchmark Code
 //========================================================================
 
@@ -376,6 +411,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheZipfRead", newGroupCache(b.N), zipfList, 0},
 		{"RistrettoZipfRead", newRistretto(b.N), zipfList, 0},
 		{"SyncMapZipfRead", newSyncMap(), zipfList, 0},
+		{"HashicorpZipfRead", newHashicorpLRU(b.N), zipfList, 0},
 
 		{"BigCacheOneKeyRead", newBigCache(b.N), oneList, 0},
 		{"FastCacheOneKeyRead", newFastCache(b.N), oneList, 0},
@@ -383,6 +419,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheOneKeyRead", newGroupCache(b.N), oneList, 0},
 		{"RistrettoOneKeyRead", newRistretto(b.N), oneList, 0},
 		{"SyncMapOneKeyRead", newSyncMap(), oneList, 0},
+		{"HashicorpOneKeyRead", newHashicorpLRU(b.N), oneList, 0},
 
 		{"BigCacheZipfWrite", newBigCache(b.N), zipfList, 100},
 		{"FastCacheZipfWrite", newFastCache(b.N), zipfList, 100},
@@ -390,6 +427,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheZipfWrite", newGroupCache(b.N), zipfList, 100},
 		{"RistrettoZipfWrite", newRistretto(b.N), zipfList, 100},
 		{"SyncMapZipfWrite", newSyncMap(), zipfList, 100},
+		{"HashicorpZipfWrite", newHashicorpLRU(b.N), zipfList, 100},
 
 		{"BigCacheOneKeyWrite", newBigCache(b.N), oneList, 100},
 		{"FastCacheOneKeyWrite", newFastCache(b.N), oneList, 100},
@@ -397,6 +435,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheOneKeyWrite", newGroupCache(b.N), oneList, 100},
 		{"RistrettoOneKeyWrite", newRistretto(b.N), oneList, 100},
 		{"SyncMapOneKeyWrite", newSyncMap(), oneList, 100},
+		{"HashicorpOneKeyWrite", newHashicorpLRU(b.N), oneList, 100},
 
 		{"BigCacheZipfMixed", newBigCache(b.N), zipfList, 25},
 		{"FastCacheZipfMixed", newFastCache(b.N), zipfList, 25},
@@ -404,6 +443,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheZipfMixed", newGroupCache(b.N), zipfList, 25},
 		{"RistrettoZipfMixed", newRistretto(b.N), zipfList, 25},
 		{"SyncMapZipfMixed", newSyncMap(), zipfList, 25},
+		{"HashicorpZipfMixed", newHashicorpLRU(b.N), zipfList, 25},
 
 		{"BigCacheOneKeyMixed", newBigCache(b.N), oneList, 25},
 		{"FastCacheOneKeyMixed", newFastCache(b.N), oneList, 25},
@@ -411,6 +451,7 @@ func BenchmarkCaches(b *testing.B) {
 		{"GroupCacheOneKeyMixed", newGroupCache(b.N), oneList, 25},
 		{"RistrettoOneKeyMixed", newRistretto(b.N), oneList, 25},
 		{"SyncMapOneKeyMixed", newSyncMap(), oneList, 25},
+		{"HashicorpOneKeyMixed", newHashicorpLRU(b.N), oneList, 25},
 	}
 
 	for _, bm := range benchmarks {
